@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "line": {
+    "repo": "nsiccha/SelectedInversion.jl",
+    "ref": "dogfood",
+    "sha": "7e99b8239704457aaccb5c86750a679dd5986a31"
+  },
+  "upstream": {
+    "repo": "timweiland/SelectedInversion.jl",
+    "ref": "main",
+    "sha": "f238bae2b4787b64d4adf1bfa4c020e23834a3f1"
+  },
+  "prepared_at": "2026-11-18T11:50:08Z",
+  "problems": [
+    {
+      "id": "umfpack-selected-inverse",
+      "role": "fix",
+      "title": "Selected inverse entries from a pivoted UMFPACK factorization",
+      "summary": "A nonsingular sparse matrix can have a zero pivot in an unpivoted LDLᵀ factorization or be unsuitable for Cholesky. UMFPACK can factor these matrices, but upstream SelectedInversion.jl cannot use its factors to compute inverse entries at a requested sparsity pattern.",
+      "repairs": [],
+      "upstream_refs": [
+        {
+          "url": "https://github.com/timweiland/SelectedInversion.jl/issues/15",
+          "relation": "reports"
+        },
+        {
+          "url": "https://github.com/timweiland/SelectedInversion.jl/pull/16",
+          "relation": "fixes"
+        }
+      ],
+      "fix": {
+        "branch": "lu-selinv",
+        "commits": [
+          {
+            "sha": "a41fb73c0997e7422b63438a8d85dddecef2f40f",
+            "title": "Add selected inversion from pivoted sparse LU (UMFPACK)",
+            "original": [
+              "a41fb73c0997e7422b63438a8d85dddecef2f40f"
+            ]
+          },
+          {
+            "sha": "009c3583f09d226687f10c5e20d7e4c09ef1fb77",
+            "title": "Test, document and benchmark LU selected inversion",
+            "original": [
+              "009c3583f09d226687f10c5e20d7e4c09ef1fb77"
+            ]
+          },
+          {
+            "sha": "e77b36fb6fd4581857493842ebef0746c12ae2cd",
+            "title": "Check UMFPACK's divide-by-scale case through do_recip",
+            "original": [
+              "e77b36fb6fd4581857493842ebef0746c12ae2cd"
+            ]
+          },
+          {
+            "sha": "af15f4f5811fe0644f58e0d517af4e0177294593",
+            "title": "Use plain Documenter references to selinv!",
+            "original": [
+              "af15f4f5811fe0644f58e0d517af4e0177294593"
+            ]
+          }
+        ],
+        "why_together": "The first commit adds the pivoted LU recurrence, row scaling and workspace. The next three supply its tests, documentation and benchmark, correct the divide-by-scale regression test, and repair the documentation links. These four commits can be applied without the KLU extension."
+      },
+      "depends_on": [],
+      "requires": [],
+      "validation": [
+        {
+          "base": "f238bae2b4787b64d4adf1bfa4c020e23834a3f1",
+          "julia": "1.10.12",
+          "bounds": "forced",
+          "tests": [
+            "test/test_lu.jl"
+          ],
+          "result": "passed",
+          "detail": "326/326 assertions passed at 7e99b8239704457aaccb5c86750a679dd5986a31 on Linux x86_64, with one Julia thread and one BLAS thread. KLU.jl 0.6.0 was loaded."
+        }
+      ]
+    },
+    {
+      "id": "klu-selected-inverse",
+      "role": "fix",
+      "title": "Selected inverse entries from KLU block triangular factors",
+      "summary": "Callers with an existing KLU factorization cannot request selected inverse entries upstream. Coupled blocks contribute an off-diagonal term, and KLU expresses its row scales in permuted order. Both affect the returned entries.",
+      "repairs": [],
+      "upstream_refs": [
+        {
+          "url": "https://github.com/timweiland/SelectedInversion.jl/issues/15",
+          "relation": "reports"
+        },
+        {
+          "url": "https://github.com/timweiland/SelectedInversion.jl/pull/16",
+          "relation": "fixes"
+        }
+      ],
+      "fix": {
+        "branch": "lu-selinv",
+        "commits": [
+          {
+            "sha": "7e99b8239704457aaccb5c86750a679dd5986a31",
+            "title": "Support KLU factorizations in LU selected inversion",
+            "original": [
+              "7e99b8239704457aaccb5c86750a679dd5986a31"
+            ]
+          }
+        ],
+        "why_together": "One commit adds the KLU extension and regression tests. It shares the UMFPACK factor buffers and folds off-diagonal block coupling into the upper factor so both solvers can use the same selected-inversion recurrence."
+      },
+      "depends_on": [
+        "umfpack-selected-inverse"
+      ],
+      "requires": [
+        {
+          "name": "KLU.jl 0.6",
+          "repo": "JuliaSparse/KLU.jl",
+          "why": "Loading KLU.jl enables the package extension that reads KLU factors. The UMFPACK methods can be used independently."
+        }
+      ],
+      "validation": [
+        {
+          "base": "f238bae2b4787b64d4adf1bfa4c020e23834a3f1",
+          "julia": "1.10.12",
+          "bounds": "forced",
+          "tests": [
+            "test/test_klu.jl"
+          ],
+          "result": "passed",
+          "detail": "278/278 assertions passed at 7e99b8239704457aaccb5c86750a679dd5986a31 on Linux x86_64, with one Julia thread and one BLAS thread. KLU.jl 0.6.0 was loaded."
+        }
+      ]
+    }
+  ]
+}
